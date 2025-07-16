@@ -150,13 +150,29 @@
         form button:hover {
             background-color: #21867a;
         }
-
     </style>
 </head>
 
 <body>
 
     <h1 style="text-align: center;">Sweet Shop</h1>
+
+    {% if messages %}
+    <ul style="list-style: none; text-align: center; padding: 0;">
+        {% for message in messages %}
+        <li style="
+                color: white;
+                background-color: {% if message.tags == 'success' %}green{% elif message.tags == 'error' %}red{% else %}gray{% endif %};
+                padding: 10px;
+                margin: 10px auto;
+                width : 50%;
+                border-radius: 5px;
+                font-weight: bold">
+            {{ message }}
+        </li>
+        {% endfor %}
+    </ul>
+    {% endif %}
 
     <!-- Add Sweet Button -->
     <a class="add-button" href="#" onclick="openModal()">+ Add Sweet</a>
@@ -195,8 +211,66 @@
         <a href="{% url 'sweet_list' %}">Reset</a>
     </form>
 
+    <!-- Buy Sweet Modal -->
+    <div id="buyModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeBuyModal()">&times;</span>
+            <h2>Buy Sweet</h2>
+            <form method="post" action="{% url 'purchase_sweet' %}">
+                {% csrf_token %}
+                <input type="hidden" id="buySweetId" name="sweet_id">
+
+                <label>Name:</label>
+                <input type="text" id="buySweetName" readonly>
+
+                <label>Category:</label>
+                <input type="text" id="buySweetCategory" readonly>
+
+                <label>Unit Price (₹):</label>
+                <input type="text" id="buySweetPrice" readonly>
+
+                <label>Quantity to Buy:</label>
+                <input type="number" name="quantity" id="buyQuantity" min="1" required oninput="updateTotalPrice()">
+
+                <label>Total Price (₹):</label>
+                <input type="text" id="buyTotalPrice" readonly style="background:#e0e0e0; font-weight:bold;">
+
+                <button type="submit" class="submit-btn">Buy</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Restock Modal -->
+    <div id="restockModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeRestockModal()">&times;</span>
+            <h2>Restock Sweet</h2>
+            <form method="post" action="{% url 'restock_sweet' %}">
+                {% csrf_token %}
+                <input type="hidden" id="restockSweetId" name="sweet_id">
+
+                <label>Name:</label>
+                <input type="text" id="restockSweetName" readonly>
+
+                <label>Category:</label>
+                <input type="text" id="restockSweetCategory" readonly>
+
+                <label>New Price (₹):</label>
+                <input type="number" step="0.01" id="restockSweetPrice" name="price" required>
+
+                <label>Quantity to Add:</label>
+                <input type="number" name="quantity" required min="1" placeholder="Enter quantity">
+
+                <button type="submit" class="submit-btn">Update & Restock</button>
+            </form>
+        </div>
+    </div>
+
+
+
+
     <!-- Sweet List Show -->
-     <table>
+    <table>
         <thead>
             <tr>
                 <th>ID</th>
@@ -216,8 +290,12 @@
                 <td>{{ sweet.price }}</td>
                 <td>{{ sweet.quantity }}</td>
                 <td>
+                    <a class="button" href="#"
+                        onclick="openBuyModal({{ sweet.id }}, '{{ sweet.name }}', '{{ sweet.category }}', '{{ sweet.price }}')">Buy</a>
+                    <a class="button" href="#"
+                        onclick="openRestockModal({{ sweet.id }}, '{{ sweet.name }}', '{{ sweet.category }}', '{{ sweet.price }}')">Restock</a>
                     <a class="button" href="{% url 'delete_sweet' sweet.id %}">Delete</a>
-                    </td>
+                </td>
             </tr>
             {% empty %}
             <tr>
@@ -243,6 +321,42 @@
             modal.style.display = "none";
         }
     }
+
+    // Open Buy Sweet Modal
+    function openBuyModal(id, name, category, price) {
+        document.getElementById("buyModal").style.display = "block";
+        document.getElementById("buySweetId").value = id;
+        document.getElementById("buySweetName").value = name;
+        document.getElementById("buySweetCategory").value = category;
+        document.getElementById("buySweetPrice").value = price;
+        document.getElementById("buyQuantity").value = 1;
+        updateTotalPrice();
+    }
+    function closeBuyModal() {
+        document.getElementById("buyModal").style.display = "none";
+    }
+
+    // Open Restock Modal
+    function openRestockModal(id, name, category, price) {
+        document.getElementById('restockModal').style.display = 'block';
+        document.getElementById('restockSweetId').value = id;
+        document.getElementById('restockSweetName').value = name;
+        document.getElementById('restockSweetCategory').value = category;
+        document.getElementById('restockSweetPrice').value = price;
+    }
+    function closeRestockModal() {
+        document.getElementById('restockModal').style.display = 'none';
+    }
+
+
+    //Total Price Count
+    function updateTotalPrice() {
+        const quantity = parseInt(document.getElementById("buyQuantity").value) || 0;
+        const unitPrice = parseFloat(document.getElementById("buySweetPrice").value) || 0;
+        const total = quantity * unitPrice;
+        document.getElementById("buyTotalPrice").value = total.toFixed(2);
+    }
+
 </script>
 
 </html>

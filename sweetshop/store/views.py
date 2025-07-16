@@ -1,4 +1,5 @@
 from django.shortcuts import render, redirect, get_object_or_404
+from django.views.decorators.csrf import csrf_exempt
 from django.contrib import messages
 from .models import Sweet
 from .forms import SweetForm
@@ -47,8 +48,54 @@ def add_sweet(request):
             messages.error(request, "Error adding sweet.")
     return redirect('sweet_list')
 
-# Delete Sweet
+## Delete Sweet
+
+from django.db import connection, transaction
+
 def delete_sweet(request, sweet_id):
     sweet = get_object_or_404(Sweet, id=sweet_id)
     sweet.delete()
+
+    # If all sweets are deleted, reset auto-increment counter
+    if not Sweet.objects.exists():
+        with connection.cursor() as cursor:
+            db_vendor = connection.vendor
+            table_name = 'store_sweet'
+            if db_vendor == 'sqlite':
+                cursor.execute(f"DELETE FROM sqlite_sequence WHERE name='{table_name}'")
+    return redirect('sweet_list')
+
+
+# Buy Sweet
+@csrf_exempt
+def purchase_sweet(request):
+    if request.method == 'POST':
+        sweet_id = request.POST.get('sweet_id')
+        quantity_to_buy = int(request.POST.get('quantity', 0))
+
+        sweet = get_object_or_404(Sweet, id=sweet_id)
+
+        if sweet.quantity >= quantity_to_buy:
+            sweet.quantity -= quantity_to_buy
+            sweet.save()
+            messages.success(request, f"Purchased {quantity_to_buy} units of {sweet.name}.")
+        else:
+            messages.error(request, f"Only {sweet.quantity} units available of {sweet.name}.")
+    return redirect('sweet_list')
+
+# Restock Sweet
+@csrf_exempt
+def restock_sweet(request):
+    if request.method == 'POST':
+        sweet_id = request.POST.get('sweet_id')
+        quantity_to_add = int(request.POST.get('quantity', 0))
+        new_price = float(request.POST.get('price', 0))
+
+        sweet = get_object_or_404(Sweet, id=sweet_id)
+
+        sweet.quantity += quantity_to_add
+        sweet.price = new_price
+        sweet.save()
+
+        messages.success(request, f"{sweet.name} restocked and price updated.")
     return redirect('sweet_list')
