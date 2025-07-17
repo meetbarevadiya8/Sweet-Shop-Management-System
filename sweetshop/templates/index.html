@@ -150,6 +150,13 @@
         form button:hover {
             background-color: #21867a;
         }
+        
+        #buybtn{
+            background: green;
+        }
+        #restockbtn{
+            background: yellowgreen;
+        }
     </style>
 </head>
 
@@ -290,9 +297,9 @@
                 <td>{{ sweet.price }}</td>
                 <td>{{ sweet.quantity }}</td>
                 <td>
-                    <a class="button" href="#"
+                    <a class="button" id="buybtn" href="#"
                         onclick="openBuyModal({{ sweet.id }}, '{{ sweet.name }}', '{{ sweet.category }}', '{{ sweet.price }}')">Buy</a>
-                    <a class="button" href="#"
+                    <a class="button" id="restockbtn" href="#"
                         onclick="openRestockModal({{ sweet.id }}, '{{ sweet.name }}', '{{ sweet.category }}', '{{ sweet.price }}')">Restock</a>
                     <a class="button" href="{% url 'delete_sweet' sweet.id %}">Delete</a>
                 </td>
